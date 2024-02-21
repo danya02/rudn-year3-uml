@@ -1,0 +1,117 @@
+@startuml DatabaseClasses
+
+class PendingUser {
+ + createdAt: DateTime 
+ - confirmToken: String 
+ + email: String
+ + name: String
+ + sent_at: DateTime 
+ - pw_hash: Bytes
+ + create(name: String, email: String, pw: String) -> PendingUser
+ + confirm(&mut self, token: String) -> Option<User>
+ + resendEmail(&self) -> bool
+ # timeoutDelete(&mut self)
+}
+
+class User {
+ + created_at: DateTime
+ + name: String 
+ + email: String 
+ - pw_hash: Bytes 
+ - pw_reset_token: String
+ + login(&mut self, password: String) -> Option<AuthToken>
+ + auth(&self, token: AuthToken) -> Option<User>
+ - change_password(&mut self, new_pw: String)
+ + reset_password(&mut self, new_pw: String, reset_token: String) -> bool
+ + is_shadowbanned: bool
+ + send_email(&self, which: Email)
+ + promote()
+}
+
+PendingUser ..-> User
+
+AuthToken --o User
+
+class AuthToken {
+ + revoke()
+ - value: String 
+ + created_at: DateTime 
+ + expires_at: DateTime 
+}
+
+class Category {
+ + name: String
+ + create(String) -> Category
+}
+
+User "1" -- "0..*" Thread
+
+Thread "0..*" -- "1..*" Category
+class Thread {
+ + name: String
+ + author: User
+ + categories: Vec<Category>
+ + created_at: DateTime
+ + is_shadowbanned: bool
+ + is_deleted: bool
+ + set_deleted(&mut self, bool)
+ + set_shadowban(&mut self, bool)
+}
+
+Thread "1" o-- "0..*" Post
+User "1" -- "0..*" Post
+class Post {
+  + author: User
+  + text: String
+  + created_at: DateTime
+  + is_shadowbanned: bool
+  + is_deleted: bool
+  + set_deleted(&mut self, bool)
+  + set_shadowban(&mut self, bool)
+}
+
+class ThreadSubscription {
+  + which: Topic
+  + who: User
+  + send_email_as_event(Event)
+}
+
+ThreadSubscription -..> Event
+
+Thread "1" -- "0..*" ThreadSubscription
+User "1" -- "0..*" ThreadSubscription
+
+Moderator --|> User
+class Moderator {
+ + promotedAt: DateTime
+ + demote(&mut self) -> User
+}
+
+class Webhook {
+  - url: String
+  + owner: Moderator
+  - missed_events: Vec<Event>
+  + send(&mut self, Event) -> Result<(), SendError>
+  # try_send_backlog(&mut self)
+}
+
+Webhook -..> Event
+
+class Event {
+  + kind: String
+  + referenced_user: Option<User>
+  + referenced_Thread: Option<Thread>,
+  + referenced_post: Option<Post>,
+}
+
+Event -..> User
+Event -..> Thread
+Event -..> Post
+
+Moderator "1" -- "0..*" Webhook
+
+Administrator --|> User
+class Administrator {
+}
+Administrator -..> Category
+@enduml
