@@ -1,16 +1,16 @@
 @startuml DatabaseClasses
 
 class PendingUser {
- + createdAt: DateTime 
- - confirmToken: String 
+ + created_at: DateTime 
+ - confirm_token: String 
  + email: String
  + name: String
  + sent_at: DateTime 
  - pw_hash: Bytes
  + create(name: String, email: String, pw: String) -> PendingUser
  + confirm(&mut self, token: String) -> Option<User>
- + resendEmail(&self) -> bool
- # timeoutDelete(&mut self)
+ + resend_email(&self) -> bool
+ # timeout_delete(&mut self)
 }
 
 class User {
@@ -25,7 +25,7 @@ class User {
  + reset_password(&mut self, new_pw: String, reset_token: String) -> bool
  + is_shadowbanned: bool
  + send_email(&self, which: Email)
- + promote()
+ + promote(&mut self) -> Moderator
 }
 
 PendingUser ..-> User
@@ -83,7 +83,7 @@ User "1" -- "0..*" ThreadSubscription
 
 Moderator --|> User
 class Moderator {
- + promotedAt: DateTime
+ + promoted_at: DateTime
  + demote(&mut self) -> User
 }
 
@@ -100,7 +100,7 @@ Webhook -..> Event
 class Event {
   + kind: String
   + referenced_user: Option<User>
-  + referenced_Thread: Option<Thread>,
+  + referenced_thread: Option<Thread>,
   + referenced_post: Option<Post>,
 }
 
