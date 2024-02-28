@@ -1,0 +1,67 @@
+@startuml AppServerClasses
+
+class Server {
+    - db: DatabaseConnection
+    - app: impl ApplicationController
+
+    + async serve(with: &impl ListeningSocket) -> !
+    ~ async serve_single(which: &impl Connection) 
+}
+
+Server *-- DatabaseConnection
+Server <-.- ListeningSocket
+Server *-- ApplicationController
+
+
+enum DatabaseConnection {
+    SqliteConnection(sqlite_sys::sqlite)
+    MysqlConnection(mariadb::Connection)
+    PostgresqlConnection(pgsql::Connection)
+
+    + execute(&self, sql: &str) -> DbResult<()>
+    + fetch_one(&self, sql: &str) -> DbResult<Record>
+    + fetch_all(&self, sql: &str) -> DbResult<Vec<Record>>
+}
+
+interface ListeningSocket {
+    + type Connection
+    + async recv() -> Result<impl Connection, std::io::Error>
+}
+
+ListeningSocket <-- Connection
+
+class ListeningTcpSocket {
+    + type Connection = TcpConnection
+    - inner: std::net::TcpListener
+}
+
+ListeningTcpSocket -.-|> ListeningSocket
+
+
+interface Connection {
+    + async read(&self, into: &mut [u8]) -> Result<usize, std::io::Error>
+    + async write(&self, from: &[u8]) -> Result<usize, std::io::Error>
+    + is_open(&self) -> bool
+    + async close(&self) -> Result<(), std::io::Error>
+}
+
+class TcpConnection {
+    - inner: std::net::TcpListener
+}
+
+TcpConnection -.-|> Connection
+TcpConnection --> ListeningTcpSocket
+
+
+interface ApplicationController {
+    + async handle_request(path: &str, db: &DatabaseConnection, req: Request) -> impl IntoHttpResponse
+}
+
+class ForumApplicationController {
+
+}
+
+ForumApplicationController -.-|> ApplicationController
+
+
+@enduml

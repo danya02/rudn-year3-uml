@@ -1,5 +1,3 @@
-build: server-up render server-down
-
 render:
 	find -name "*.plantuml" | xargs -I{} curl localhost:8080/png --data-binary @{} --output {}-rendered.png
 clean:
