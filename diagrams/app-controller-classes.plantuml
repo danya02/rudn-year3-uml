@@ -1,0 +1,97 @@
+@startuml AppControllerClasses
+
+class User {
+    + username: String
+    + password_hash: String
+}
+class Token {
+    + text: String
+}
+
+class AccountController {
+    + login(username: &str, password: &str) -> Option<(User, Token)>
+    + logout(&Token)
+    + change_password(&Token, new_pw: &str)
+
+}
+
+
+
+AccountController -.-> AccountManager
+
+class ThreadController {
+    + create_thread(user: &UserRef, req: ThreadCreateRequest)
+}
+
+
+AccountManager -- Token
+AccountManager -- User
+
+
+
+ThreadController -.-> AccountManager
+class PostController {
+    + create_post_in(author: &UserRef, thread: ThreadId<usize>, req: PostForm)
+}
+
+PostController -.-> AccountManager
+
+class AccountManager {
+    + create(User) -> UserId<usize>
+    + get(username: String) -> Option<User>
+    + delete(UserId<usize>) -> Result<(),()>
+    + change_password(which: UserId<usize>, to_what: String)
+    + create_token(&User) -> Token
+    + validate_token(&Token) -> Option<User>
+    + delete_token(&Token)
+    + delete_all_tokens(UserId<usize>)
+}
+
+class Thread {
+    + name: String
+    + author: UserId<usize>
+}
+class Post {
+    + text: String
+    + author: UserId<usize>
+}
+
+class ThreadRepo {
+    + type Repo::T = Thread
+    - conn: DbConnection
+}
+class PostRepo {
+    + type Repo::T = Post
+    - conn: DbConnection
+}
+
+PostRepo <-- Post
+
+interface "Repo<T>" {
+    + create(item: T) -> Id<T>
+    + get(which: Id<T>) -> Option<T>
+    + update(which: Id<T>, new_state: T) -> Result<(),()>
+    + delete(which: Id<T>) -> Result<(),()>
+}
+
+ThreadRepo -.-|> "Repo<T>"
+
+interface BaseController {
+    + dispatch_request(req: HttpRequest) -> HttpResponse
+}
+
+PostController -.-|> BaseController
+ThreadController -.-|> BaseController
+
+PostController -.-> PostRepo
+PostController -.-> ThreadRepo
+
+PostRepo -.-|> "Repo<T>"
+
+ThreadRepo <-- Thread
+
+ThreadController -.-> ThreadRepo
+
+
+
+@enduml
