@@ -1,10 +1,10 @@
 @startuml AppControllerClasses
 
-class User {
+struct User {
     + username: String
     + password_hash: String
 }
-class Token {
+struct Token {
     + text: String
 }
 
@@ -12,8 +12,9 @@ class AccountController {
     + login(username: &str, password: &str) -> Option<(User, Token)>
     + logout(&Token)
     + change_password(&Token, new_pw: &str)
-
 }
+
+AccountController -.-|> BaseController
 
 
 
@@ -47,11 +48,11 @@ class AccountManager {
     + delete_all_tokens(UserId<usize>)
 }
 
-class Thread {
+struct Thread {
     + name: String
     + author: UserId<usize>
 }
-class Post {
+struct Post {
     + text: String
     + author: UserId<usize>
 }
@@ -65,7 +66,7 @@ class PostRepo {
     - conn: DbConnection
 }
 
-PostRepo <-- Post
+PostRepo -- Post
 
 interface "Repo<T>" {
     + create(item: T) -> Id<T>
@@ -77,8 +78,11 @@ interface "Repo<T>" {
 ThreadRepo -.-|> "Repo<T>"
 
 interface BaseController {
+    ~ event_bus: impl EventBusHandle
     + dispatch_request(req: HttpRequest) -> HttpResponse
 }
+
+BaseController -o EventBusHandle
 
 PostController -.-|> BaseController
 ThreadController -.-|> BaseController
@@ -88,10 +92,88 @@ PostController -.-> ThreadRepo
 
 PostRepo -.-|> "Repo<T>"
 
-ThreadRepo <-- Thread
+ThreadRepo -- Thread
 
 ThreadController -.-> ThreadRepo
 
+interface EventBusHandle {
+    + publish(what: impl Event)
+    + subscribe(kind: EventKind, on_event: FnMut(Event) -> ()) -> u64
+    + unsubscribe(sub_id: u64)
+}
+
+class RabbitMqHandle {
+    - server_conn: TcpSocket
+}
+
+EventBusHandle -.-|> RabbitMqHandle
+
+enum Event {
+    ThreadCreated(ThreadCreatedEvent)
+    PostCreated(PostCreatedEvent)
+}
 
 
+struct ThreadCreatedEvent {
+    + which: Thread
+    + when: DateTime
+}
+struct PostCreatedEvent {
+    + which: Post
+    + when: DateTime
+}
+
+
+ThreadCreatedEvent -o Thread
+PostCreatedEvent -o Post
+
+Event -* ThreadCreatedEvent
+Event -* PostCreatedEvent
+
+enum EventKind {
+    ThreadCreated
+    PostCreated
+}
+
+class WebhookController {
+    + create_webhook(auth: Token, url: String, event_kind: EventKind)
+    + delete_webhook(auth: Token, url: String)
+}
+
+WebhookController <-.- Event
+WebhookController <-.- EventKind
+
+Event -- EventKind
+
+
+class WebhookRepo {
+    + type Repo::T = Webhook
+    - conn: DbConnection
+    + get_by_event_type(which: EventType) -> Vec<Webhook>
+}
+
+
+struct Webhook {
+    + url: String
+    + send_what: EventKind
+}
+
+Webhook -- WebhookRepo
+Webhook -* EventKind
+
+WebhookRepo -.-|> "Repo<T>"
+
+WebhookRepo <-.- EventKind
+
+WebhookController -.-> WebhookRepo
+WebhookController -.-|> BaseController
+
+class WebhookExecutor {
+    ~ event_bus: impl EventBusHandle
+    + receive_event(e: Event)
+    - send_webhook_data(url: String, e: Event)
+}
+
+WebhookExecutor -.-> WebhookRepo
+WebhookExecutor -o EventBusHandle
 @enduml
