@@ -8,3 +8,5 @@ UML modelling course in RUDN
 [Диаграма классов: сервер приложения](./diagrams/app-server-classes.plantuml-rendered.png)
 
 [Диаграма классов: менеджеры и контроллеры](./diagrams/app-controller-classes.plantuml-rendered.png)
+
+[Диаграма use-case](./diagrams/use-cases.plantuml-rendered.png)

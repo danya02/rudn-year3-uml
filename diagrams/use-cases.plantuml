@@ -1,0 +1,83 @@
+@startuml Usecases
+skinparam shadowing false
+skinparam actor {
+	BorderColor black
+	BackgroundColor white
+}
+skinparam usecase {
+    BackgroundColor #94de5e
+    BorderColor DarkSlateGray
+    ArrowColor Olive
+}
+skinparam noteBorderColor black
+
+actor User as user
+
+actor Moderator as mod
+actor Administrator as admin
+
+rectangle "Auth" {
+    usecase "Register" as register
+    usecase "Login" as login
+}
+
+rectangle "Topics" {
+    usecase "Search topics" as search_topic
+    usecase "Create topic" as create_topic
+    usecase "Delete topic" as delete_topic
+    usecase "Add post to topic" as add_to_topic
+}
+
+rectangle "Posts" {
+    usecase "Create post" as create_post
+    usecase "View post" as view_post
+    create_post --> add_to_topic
+    usecase "Delete post" as delete_post
+}
+
+user --> search_topic
+user --> view_post
+
+rectangle "Moderation" {
+    usecase "Ban user" as ban
+    usecase "Shadowban user" as shadowban
+    usecase "Promote/demote moderator" as transmote
+    usecase "Unban user" as unban
+    usecase "Undelete post/topic" as undelete
+}
+
+mod --> ban
+mod --> shadowban
+admin --> ban
+admin --> shadowban
+
+admin --> transmote
+admin --> unban
+admin --> undelete
+
+
+user --> register
+user --> login
+
+mod --> login
+
+user --> create_topic
+user --> create_post
+user --> delete_post: only if author
+
+mod --> delete_topic
+mod --> delete_post
+
+rectangle "Webhooks" {
+    usecase "Create webhook" as create_webhook
+    usecase "Respond to webhook" as respond_webhook
+}
+
+actor "Webhook server" as server
+
+server --> respond_webhook
+mod --> create_webhook
+
+server -- mod
+
+@enduml
