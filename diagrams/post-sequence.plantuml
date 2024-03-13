@@ -1,0 +1,64 @@
+@startuml PostSequence
+
+actor User as user
+
+participant "Web frontend" as web
+participant "Thread controller" as thread
+participant "Post controller" as post
+database "Content DB" as db
+
+activate user
+opt View content
+    user -> web: View threads
+    activate web
+    web -> thread: top threads
+    activate thread
+    thread -> db: select threads limit 10
+    activate db
+    db -> thread: IDs: [1,2,3]
+    deactivate thread
+    deactivate db
+    web -> post: latest post in thread: [1,2,3]
+    activate post
+    post -> db: select posts where thread_id=[1,2,3]
+    activate db
+    db -> post: post content
+    deactivate db
+    post -> web: latest posts for threads
+    deactivate post
+    web -> user: HTML: threads, posts
+    deactivate web
+end
+
+opt View thread
+    activate user
+        user -> web: View thread ID 1
+        activate web
+            web -> thread: get thread 1 meta
+            activate thread
+                thread -> db: select threads where id=1
+                activate db
+                    opt If thread not found
+                    db -x thread: missing
+                    thread -x web: missing
+                    web -x user: missing
+                    end
+                    db -> thread: thread 1 meta
+                deactivate db
+                thread -> web: thread 1 meta
+            deactivate thread
+            web -> post: get posts for thread 1
+            activate post 
+                post -> db: select posts where thread_id=1
+                activate db
+                    db -> post: post content
+                deactivate db
+                post -> web: post content
+            deactivate post
+            web -> user: HTML: thread and posts
+        deactivate web
+    deactivate user
+end
+deactivate user
+
+@enduml

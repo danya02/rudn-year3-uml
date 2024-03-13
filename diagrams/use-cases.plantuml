@@ -1,4 +1,6 @@
 @startuml Usecases
+left to right direction
+
 skinparam shadowing false
 skinparam actor {
 	BorderColor black
@@ -16,19 +18,19 @@ actor User as user
 actor Moderator as mod
 actor Administrator as admin
 
-rectangle "Auth" {
+package "Auth" {
     usecase "Register" as register
     usecase "Login" as login
 }
 
-rectangle "Topics" {
+package "Topics" {
     usecase "Search topics" as search_topic
     usecase "Create topic" as create_topic
     usecase "Delete topic" as delete_topic
     usecase "Add post to topic" as add_to_topic
 }
 
-rectangle "Posts" {
+package "Posts" {
     usecase "Create post" as create_post
     usecase "View post" as view_post
     create_post --> add_to_topic
@@ -38,7 +40,7 @@ rectangle "Posts" {
 user --> search_topic
 user --> view_post
 
-rectangle "Moderation" {
+package "Moderation" {
     usecase "Ban user" as ban
     usecase "Shadowban user" as shadowban
     usecase "Promote/demote moderator" as transmote
@@ -68,7 +70,7 @@ user --> delete_post: only if author
 mod --> delete_topic
 mod --> delete_post
 
-rectangle "Webhooks" {
+package "Webhooks" {
     usecase "Create webhook" as create_webhook
     usecase "Respond to webhook" as respond_webhook
 }

@@ -1,0 +1,110 @@
+@startuml RegistrationSequence
+
+
+participant "User's mail server" as usermail
+actor "New user" as user
+participant "Auth service" as auth
+participant "Internal mail service" as mail
+participant "Database manager" as db
+database "User db" as userdb
+
+
+user -> auth: name=N; email=E; password=P
+activate auth
+auth -> db: get: user where name=N or email=E
+activate db
+activate db
+db -> userdb: name=N or email=E?
+activate userdb
+
+alt If user exists
+    userdb -> db: OK
+    db -> auth: OK
+    deactivate db
+    auth -x user: already exists, cannot register
+end
+
+
+
+userdb -x db: not found
+deactivate userdb
+db -x auth: not found
+deactivate db
+auth -> db: create pending_user(name=N,\nemail=E, password=hash(P))
+activate db
+db -> db: generate token T
+db -> userdb: create: name=N, email=E,\npassword=hash(P), pending_token=T
+activate userdb
+userdb -> db: OK
+deactivate userdb
+db -> auth: token=T
+deactivate db
+auth -> mail: send(registration_mail,\ntoken=T, to=E)
+activate mail
+activate mail
+mail -> usermail: RCPT TO: E\nregistration_token=T
+
+activate usermail
+activate usermail
+
+alt If mail is undeliverable
+usermail -x mail: No such user
+deactivate usermail
+mail -x auth: E not exists
+deactivate mail
+auth -> db: delete pending_user(\nname=N,email=E)
+activate db
+db -> userdb: delete: name=N, email=E
+activate userdb
+userdb -> db: OK
+deactivate userdb
+db -> auth: OK
+deactivate db
+auth -x user: E does not exist
+end
+
+activate usermail
+usermail -> mail: OK
+deactivate usermail
+mail -> auth: OK
+deactivate mail
+auth -> user: Check mail, give T
+deactivate auth
+
+activate user
+loop 
+activate usermail
+user -> usermail: Any mail?
+end
+usermail -> user: registration, token=T
+deactivate usermail
+
+user -> auth: token = T'
+activate auth
+
+auth -> db: confirm(email=E,\ntoken=T)
+activate db
+activate db
+db -> userdb: get: user where email=E
+activate userdb
+userdb -> db: OK: token=T
+
+alt If T != T'
+    db -x auth: Wrong token
+    deactivate db
+    auth -x user: Wrong token
+end
+
+db -> userdb: update: pending_token=NULL
+userdb -> db: OK
+
+deactivate userdb
+db -> auth: OK
+deactivate db
+
+auth -> user: OK, login now
+
+deactivate auth
+deactivate user
+
+@enduml 
