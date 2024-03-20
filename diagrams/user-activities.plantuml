@@ -1,0 +1,72 @@
+@startuml UserActivities
+
+start
+:User enters website;
+:Reads top threads;
+split
+    
+    -> log in;
+    switch (Login options)
+        case (username/password presented)
+        if (auth is valid?)  then (yes)
+            :Acquires login token;
+            detach
+        else (no) 
+            :Gets login error;
+            end
+        endif
+
+        case (OAuth chosen)
+            :Receives OAuth redirect;
+            :Auths to login provider;
+            :Brings back proof;
+            if (proof is valid?) then (yes)
+                if (user exists?) then (no)
+                    :Fills in onboarding form;
+                else (yes)
+                endif
+                :Acquires login token;
+                detach
+            else (no)
+                :Gets login error;
+                end
+            endif
+        case (Registration/Account recovery)
+            :Fills form;
+            :Checks mail for confirm code;
+            :Presents confirm code;
+            if (code is valid?) then (yes)
+                :Acquires login token;
+                detach
+            else (no)
+                :Gets error;
+                end
+            endif
+    endswitch
+    
+    split again
+    -> open thread;
+    :Reads posts in thread;
+    -> Wants to create new post in this thread; 
+        :Enters text into form;
+        if (User is shadowbanned) then (yes)
+            :Post is shadowbanned when sent;
+        else (no)
+        endif
+        :User's browser scrolls to new post;
+        detach
+    split again 
+    -> create thread;
+        :Enters name and parameters into form;
+        switch (User/form status)
+        case (User is shadowbanned)
+        :Thread is private, but user sees it as public;
+        case (Thread should be private)
+        :Thread is private;
+        case (else)
+        endswitch
+        :Thread is created;
+        :User redirected to new thread;
+    detach
+    
+@enduml

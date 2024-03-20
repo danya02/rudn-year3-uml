@@ -1,0 +1,34 @@
+@startuml ModerationStates
+[*] -> ThreadEmpty: create thread
+state thread_choice <<choice>>
+ThreadEmpty -> thread_choice
+ThreadEmpty: Can be created in two different variants
+thread_choice --> ThreadEmptyPrivate: If user is shadowbanned or requested private thread
+thread_choice --> ThreadEmptyPublic: If user OK
+
+ThreadEmptyPublic: Shown on separate part of UI
+
+ThreadEmptyPublic -> ThreadPublic: user creates post
+
+ThreadPublic: all users can see it and write to it
+
+ThreadPublic -> ThreadPublic: post
+
+ThreadEmptyPrivate -> ThreadPrivate: user creates post
+
+ThreadEmptyPrivate: only shown to user, added users and mods
+ThreadPrivate: only shown to user, added users and mods
+
+ThreadPrivate -> ThreadPrivate: post
+
+ThreadEmptyPublic --> ThreadDeleted: owner or mod deletes
+ThreadEmptyPrivate --> ThreadDeleted: owner or mod deletes
+ThreadPublic --> ThreadDeleted: mod deletes
+ThreadPrivate --> ThreadDeleted: mod deletes
+
+ThreadDeleted: Only admin can see it
+ThreadDeleted --> [*]: by time or manual delete
+
+ThreadDeleted --> ThreadPublic: admin restores
+
+@enduml

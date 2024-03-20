@@ -14,3 +14,7 @@ UML modelling course in RUDN
 [Диаграма последовательности регистрации](./diagrams/registration-sequence.plantuml-rendered.png)
 
 [Диаграма последовательности чтения контента](./diagrams/post-sequence.plantuml-rendered.png)
+
+[Диаграма состояний модерации одного thread](./diagrams/moderation-states.plantuml-rendered.png)
+
+[Диаграма действий пользователя на сайте](./diagrams/user-activities.plantuml-rendered.png)
